@@ -14,6 +14,20 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 
 builder.Services.AddIdentityWithExtension();
 
+builder.Services.ConfigureApplicationCookie(options =>
+{
+    var cookieBuilder = new CookieBuilder();
+    cookieBuilder.Name = "IdentityCookie";
+
+    options.LoginPath = new PathString("/Home/SignIn");
+    options.LogoutPath = new PathString("/Member/LogOut");
+
+
+    options.Cookie = cookieBuilder;
+    options.ExpireTimeSpan = TimeSpan.FromDays(60);
+    options.SlidingExpiration = true;
+});
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -28,6 +42,8 @@ app.UseHttpsRedirection();
 app.UseStaticFiles();
 
 app.UseRouting();
+
+app.UseAuthentication();
 
 app.UseAuthorization();
 

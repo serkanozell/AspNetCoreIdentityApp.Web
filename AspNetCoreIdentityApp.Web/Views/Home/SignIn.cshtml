@@ -12,15 +12,18 @@
             @TempData["SuccessMessage"]
         </div>
 
-        <form asp-controller="Home" asp-action="SignIn" method="post">
+        @*burada illaki actionları querystring i falan vermemize gerek yok. onun yerine sadece method tipini versekte aynı işlevi yapar*@
+        @*<form asp-controller="Home" asp-action="SignIn" asp-route-returnurl="@Context.Request.Query["returnurl"]" method="post">*@
+
+        <form method="post">
             <div class="mb-3">
                 <label for="Email" class="form-label" asp-for="Email"></label>
-                <input class="form-control" asp-for="Email">
+                <input value="serkanozel399@gmail.com" class="form-control" asp-for="Email">
                 <span class="text-danger" asp-validation-for="Email"></span>
             </div>
             <div class="mb-3">
                 <label for="Password" class="form-label" asp-for="Password"></label>
-                <input type="password" class="form-control" asp-for="Password">
+                <input value="Serkan.1991" type="password" class="form-control" asp-for="Password">
             </div>
             <div class="mb-3 form-check">
                 <input type="checkbox" class="form-check-input" asp-for="RememberMe">
