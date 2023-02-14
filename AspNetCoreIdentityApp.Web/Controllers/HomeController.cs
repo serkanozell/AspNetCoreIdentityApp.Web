@@ -1,4 +1,5 @@
-﻿using AspNetCoreIdentityApp.Web.Models;
+﻿using AspNetCoreIdentityApp.Web.Extensions;
+using AspNetCoreIdentityApp.Web.Models;
 using AspNetCoreIdentityApp.Web.ViewModels;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -10,11 +11,13 @@ namespace AspNetCoreIdentityApp.Web.Controllers
     {
         private readonly ILogger<HomeController> _logger;
         private readonly UserManager<AppUser> _userManager;
+        private readonly SignInManager<AppUser> _signInManager;
 
-        public HomeController(ILogger<HomeController> logger, UserManager<AppUser> userManager)
+        public HomeController(ILogger<HomeController> logger, UserManager<AppUser> userManager, SignInManager<AppUser> signInManager)
         {
             _logger = logger;
             _userManager = userManager;
+            _signInManager = signInManager;
         }
 
         public IActionResult Index()
@@ -53,10 +56,44 @@ namespace AspNetCoreIdentityApp.Web.Controllers
                 return RedirectToAction("SignUp");
             }
 
-            foreach (IdentityError item in identityResult.Errors)
+            ModelState.AddModelErrorList(identityResult.Errors.Select(e => e.Description).ToList());
+
+            return View();
+        }
+
+        public IActionResult SignIn()
+        {
+            return View();
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> SignIn(SignInViewModel signInViewModel, string? returnUrl = null)
+        {
+            returnUrl = returnUrl ?? Url.Action("Index", "Home");
+
+            var user = await _userManager.FindByEmailAsync(signInViewModel.Email);
+            if (user == null)
             {
-                ModelState.AddModelError(string.Empty, item.Description);
+                ModelState.AddModelError(string.Empty, "Email or password incorrect");
+                return View();
             }
+
+            var signInResult = await _signInManager.PasswordSignInAsync(user, signInViewModel.Password, signInViewModel.RememberMe, true);
+
+            if (signInResult.Succeeded)
+            {
+                return Redirect(returnUrl);
+            }
+
+            if (signInResult.IsLockedOut)
+            {
+                ModelState.AddModelErrorList(new List<string>() { "Your account locked for 3 minutes" });
+
+                return View();
+            }
+
+            ModelState.AddModelErrorList(new List<string>() { "Email or password incorrect.", $" Failure login attemt count is : {await _userManager.GetAccessFailedCountAsync(user)}" });
+
             return View();
         }
 
