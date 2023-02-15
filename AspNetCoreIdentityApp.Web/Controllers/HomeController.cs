@@ -97,6 +97,43 @@ namespace AspNetCoreIdentityApp.Web.Controllers
             return View();
         }
 
+        public async Task<IActionResult> ForgotPassword()
+        {
+            return View();
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> ForgotPassword(ForgotPasswordViewModel forgotPasswordViewModel)
+        {
+            var hasUser = await _userManager.FindByEmailAsync(forgotPasswordViewModel.Email);
+
+            if (hasUser == null)
+            {
+                ModelState.AddModelError(string.Empty, "The username with this e-mail could not be found");
+
+                return View();
+            }
+
+            string passwordResetToken = await _userManager.GeneratePasswordResetTokenAsync(hasUser);
+
+            var passwordResetLink = Url.Action("ResetPassword", "Home", new
+            {
+                userId = hasUser.Id,
+                Token = passwordResetToken
+            });
+
+            //https://localhost:7026?userId=12321&token=3r32rdfqweşjpjf03ı2jf
+            //alkcehqhzcjvaldc
+
+
+            TempData["SuccessMessage"] = "Password reset e-mail sended to your e-mail address";
+
+            return RedirectToAction("ForgotPassword");
+        }
+
+
+
+
         [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
         public IActionResult Error()
         {
