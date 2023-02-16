@@ -72,7 +72,7 @@ namespace AspNetCoreIdentityApp.Web.Controllers
         [HttpPost]
         public async Task<IActionResult> SignIn(SignInViewModel signInViewModel, string? returnUrl = null)
         {
-            returnUrl = returnUrl ?? Url.Action("Index", "Home");
+            returnUrl ??= Url.Action("Index", "Home");
 
             var user = await _userManager.FindByEmailAsync(signInViewModel.Email);
             if (user == null)
@@ -85,7 +85,7 @@ namespace AspNetCoreIdentityApp.Web.Controllers
 
             if (signInResult.Succeeded)
             {
-                return Redirect(returnUrl);
+                return Redirect(returnUrl!);
             }
 
             if (signInResult.IsLockedOut)
@@ -128,7 +128,7 @@ namespace AspNetCoreIdentityApp.Web.Controllers
             //https://localhost:7026?userId=12321&token=3r32rdfqweşjpjf03ı2jf
             //alkcehqhzcjvaldc
 
-            await _emailService.SendResetPasswordEmail(passwordResetLink, hasUser.Email);
+            await _emailService.SendResetPasswordEmail(passwordResetLink!, hasUser.Email!);
 
             TempData["SuccessMessage"] = "Password reset e-mail sended to your e-mail address";
 
@@ -147,15 +147,15 @@ namespace AspNetCoreIdentityApp.Web.Controllers
         [HttpPost]
         public async Task<IActionResult> ResetPassword(ResetPasswordViewModel resetPasswordViewModel)
         {
-            var userId = TempData["user_id"].ToString();
-            var token = TempData["token"].ToString();
+            var userId = TempData["user_id"];
+            var token = TempData["token"];
 
             if (userId == null || token == null)
             {
                 throw new Exception("Error found");
             }
 
-            var hasUser = await _userManager.FindByIdAsync(userId);
+            var hasUser = await _userManager.FindByIdAsync(userId.ToString()!);
 
             if (hasUser == null)
             {
@@ -164,7 +164,7 @@ namespace AspNetCoreIdentityApp.Web.Controllers
                 return View();
             }
 
-            var result = await _userManager.ResetPasswordAsync(hasUser, token, resetPasswordViewModel.Password);
+            var result = await _userManager.ResetPasswordAsync(hasUser, token.ToString()!, resetPasswordViewModel.Password!);
 
             if (result.Succeeded)
             {
