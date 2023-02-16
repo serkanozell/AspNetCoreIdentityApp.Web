@@ -9,10 +9,12 @@ namespace AspNetCoreIdentityApp.Web.ViewModels
         [Display(Name = "Email :")]
         public string Email { get; set; }
 
+        [DataType(DataType.Password)]
         [Required(ErrorMessage = "Password can't be null")]
         [Display(Name = "Password :")]
         public string Password { get; set; }
 
+        [DataType(DataType.Password)]
         [Display(Name = "Remember Me")]
         public bool RememberMe { get; set; }
 

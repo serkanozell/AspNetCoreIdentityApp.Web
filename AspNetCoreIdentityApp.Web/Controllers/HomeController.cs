@@ -1,5 +1,6 @@
 ﻿using AspNetCoreIdentityApp.Web.Extensions;
 using AspNetCoreIdentityApp.Web.Models;
+using AspNetCoreIdentityApp.Web.Services;
 using AspNetCoreIdentityApp.Web.ViewModels;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -12,12 +13,14 @@ namespace AspNetCoreIdentityApp.Web.Controllers
         private readonly ILogger<HomeController> _logger;
         private readonly UserManager<AppUser> _userManager;
         private readonly SignInManager<AppUser> _signInManager;
+        private readonly IEmailService _emailService;
 
-        public HomeController(ILogger<HomeController> logger, UserManager<AppUser> userManager, SignInManager<AppUser> signInManager)
+        public HomeController(ILogger<HomeController> logger, UserManager<AppUser> userManager, SignInManager<AppUser> signInManager, IEmailService emailService)
         {
             _logger = logger;
             _userManager = userManager;
             _signInManager = signInManager;
+            _emailService = emailService;
         }
 
         public IActionResult Index()
@@ -120,11 +123,12 @@ namespace AspNetCoreIdentityApp.Web.Controllers
             {
                 userId = hasUser.Id,
                 Token = passwordResetToken
-            });
+            }, HttpContext.Request.Scheme);
 
             //https://localhost:7026?userId=12321&token=3r32rdfqweşjpjf03ı2jf
             //alkcehqhzcjvaldc
 
+            await _emailService.SendResetPasswordEmail(passwordResetLink, hasUser.Email);
 
             TempData["SuccessMessage"] = "Password reset e-mail sended to your e-mail address";
 
@@ -132,6 +136,49 @@ namespace AspNetCoreIdentityApp.Web.Controllers
         }
 
 
+        public IActionResult ResetPassword(string userId, string token)
+        {
+            TempData["user_id"] = userId;
+            TempData["token"] = token;
+
+            return View();
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> ResetPassword(ResetPasswordViewModel resetPasswordViewModel)
+        {
+            var userId = TempData["user_id"].ToString();
+            var token = TempData["token"].ToString();
+
+            if (userId == null || token == null)
+            {
+                throw new Exception("Error found");
+            }
+
+            var hasUser = await _userManager.FindByIdAsync(userId);
+
+            if (hasUser == null)
+            {
+                ModelState.AddModelError(string.Empty, "User can't found");
+
+                return View();
+            }
+
+            var result = await _userManager.ResetPasswordAsync(hasUser, token, resetPasswordViewModel.Password);
+
+            if (result.Succeeded)
+            {
+                TempData["SuccessMessage"] = "Your password changed successfully";
+            }
+            else
+            {
+                ModelState.AddModelErrorList(result.Errors.Select(e => e.Description).ToList());
+
+                return View();
+            }
+
+            return View();
+        }
 
 
         [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
