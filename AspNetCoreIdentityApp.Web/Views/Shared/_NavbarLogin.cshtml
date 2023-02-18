@@ -1,12 +1,14 @@
 ﻿@if (User.Identity!.IsAuthenticated)
 {
-    <ul class="navbar-nav me-0">
+    <ul class="navbar-nav me-5">
         <li class="nav-item dropdown">
             <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                 @User.Identity.Name
             </a>
             <ul class="dropdown-menu">
                 <li><a class="dropdown-item" asp-controller="Member" asp-action="Index">Profile</a></li>
+                <li><a class="dropdown-item" asp-controller="Member" asp-action="PasswordChange">Change Password</a></li>
+                <li><a class="dropdown-item" asp-controller="Member" asp-action="UserEdit">Edit Profile</a></li>
                 <li><a class="dropdown-item" asp-route-returnurl="/Home/Index" asp-controller="Member" asp-action="LogOut">Sign Out</a></li>
             </ul>
         </li>

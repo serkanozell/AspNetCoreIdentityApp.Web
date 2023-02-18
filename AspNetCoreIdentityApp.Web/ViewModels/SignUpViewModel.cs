@@ -17,13 +17,17 @@ namespace AspNetCoreIdentityApp.Web.ViewModels
         [Display(Name = "Phone Number :")]
         public string PhoneNumber { get; set; }
 
+        [DataType(DataType.Password)]
         [Required(ErrorMessage = "Password can't be null")]
         [Display(Name = "Password :")]
+        [MinLength(6, ErrorMessage = "Password must be contains more than 6 character")]
         public string Password { get; set; }
 
+        [DataType(DataType.Password)]
         [Compare(nameof(Password), ErrorMessage = "Password and Password Confirm fields must be same.")]
         [Required(ErrorMessage = "Password Confirm can't be null")]
         [Display(Name = "Password Confirm :")]
+        [MinLength(6, ErrorMessage = "Password must be contains more than 6 character")]
         public string PasswordConfirm { get; set; }
 
         public SignUpViewModel()
