@@ -1,0 +1,49 @@
+﻿@{
+    ViewData["Title"] = "Index";
+}
+
+@model List<AdminModel.RoleViewModel>
+
+
+<div class="row">
+    <div class="col-md-6 offset-md-2">
+        <h2>Roles</h2>
+    </div>
+    <div class="col-md-2">
+        <a class="btn btn-primary" asp-area="Admin" asp-controller="Role" asp-action="RoleAdd">Add Role</a>
+    </div>
+</div>
+<div class="row">
+
+    <div class="col-md-8 offset-md-2">
+
+        @if (TempData["SuccessMessage"] != null)
+        {
+            <div class="alert alert-info" role="alert">
+                @TempData["SuccessMessage"]
+            </div>
+        }
+
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Role Id</th>
+                    <th>Role Name</th>
+                    <th>Update</th>
+                    <th>Delete</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in Model)
+                {
+                    <tr>
+                        <td>@item.RoleId</td>
+                        <td>@item.RoleName</td>
+                        <td><a class="btn btn-info btn-sm" asp-area="Admin" asp-controller="Role" asp-action="RoleUpdate" asp-route-id="@item.RoleId">Update</a></td>
+                        <td><a class="btn btn-info btn-sm" asp-area="Admin" asp-controller="Role" asp-action="RoleDelete" asp-route-id="@item.RoleId">Delete</a></td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
