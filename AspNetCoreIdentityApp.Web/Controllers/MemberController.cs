@@ -168,6 +168,18 @@ namespace AspNetCoreIdentityApp.Web.Controllers
             return View(resultUserEditViewModel);
         }
 
+        [HttpGet]
+        public async Task<IActionResult> Claims()
+        {
+            var userClaim = User.Claims.Select(u => new ClaimViewModel()
+            {
+                Issuer = u.Issuer,
+                Type = u.Type,
+                Value = u.Value
+            }).ToList();
+
+            return View(userClaim);
+        }
 
         public async Task<IActionResult> AccessDenied(string returnUrl)
         {
