@@ -32,7 +32,7 @@ namespace AspNetCoreIdentityApp.Web.Controllers
                 Email = currentUser!.Email,
                 UserName = currentUser.UserName,
                 PhoneNumber = currentUser.PhoneNumber,
-                PictureUrl=currentUser.Picture
+                PictureUrl = currentUser.Picture
             };
 
             return View(userViewModel);
@@ -166,6 +166,18 @@ namespace AspNetCoreIdentityApp.Web.Controllers
             };
 
             return View(resultUserEditViewModel);
+        }
+
+
+        public async Task<IActionResult> AccessDenied(string returnUrl)
+        {
+            string message = string.Empty;
+
+            message = "You don't have permission to view this page. Please contact to website admin for permissions";
+
+            ViewBag.Message = message;
+
+            return View();
         }
     }
 }
