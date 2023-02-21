@@ -169,7 +169,7 @@ namespace AspNetCoreIdentityApp.Web.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> Claims()
+        public IActionResult Claims()
         {
             var userClaim = User.Claims.Select(u => new ClaimViewModel()
             {
@@ -179,6 +179,13 @@ namespace AspNetCoreIdentityApp.Web.Controllers
             }).ToList();
 
             return View(userClaim);
+        }
+
+        [Authorize(Policy = "AnkaraPolicy")]
+        [HttpGet]
+        public IActionResult AnkaraPage()
+        {
+            return View();
         }
 
         public async Task<IActionResult> AccessDenied(string returnUrl)
