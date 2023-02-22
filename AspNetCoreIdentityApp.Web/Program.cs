@@ -2,8 +2,10 @@ using AspNetCoreIdentityApp.Web.ClaimProviders;
 using AspNetCoreIdentityApp.Web.Extensions;
 using AspNetCoreIdentityApp.Web.Models;
 using AspNetCoreIdentityApp.Web.OptionsModel;
+using AspNetCoreIdentityApp.Web.Requirements;
 using AspNetCoreIdentityApp.Web.Services;
 using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.FileProviders;
@@ -37,6 +39,7 @@ builder.Services.ConfigureApplicationCookie(options =>
 builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("EmailSettings"));
 builder.Services.AddScoped<IEmailService, EmailService>();
 builder.Services.AddScoped<IClaimsTransformation, UserClaimProvider>();
+builder.Services.AddScoped<IAuthorizationHandler, ExchangeExpireRequirementHandler>();
 
 builder.Services.AddAuthorization(options =>
 {
@@ -45,6 +48,12 @@ builder.Services.AddAuthorization(options =>
         policy.RequireClaim("City", "Ankara");
         policy.RequireRole("Admin");
     });
+
+    options.AddPolicy("ExchangePolicy", policy =>
+    {
+        policy.AddRequirements(new ExchangeExpireRequirement());
+    });
+
 });
 
 builder.Services.Configure<SecurityStampValidatorOptions>(options =>

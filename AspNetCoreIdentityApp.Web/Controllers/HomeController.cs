@@ -5,6 +5,7 @@ using AspNetCoreIdentityApp.Web.ViewModels;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using System.Diagnostics;
+using System.Security.Claims;
 
 namespace AspNetCoreIdentityApp.Web.Controllers
 {
@@ -54,15 +55,30 @@ namespace AspNetCoreIdentityApp.Web.Controllers
                 Email = signUpViewModel.Email
             }, signUpViewModel.PasswordConfirm);
 
-            if (identityResult.Succeeded)
+            if (!identityResult.Succeeded)
             {
-                TempData["SuccessMessage"] = "You SignUp request success.";
-                return RedirectToAction("SignUp");
+                ModelState.AddModelErrorList(identityResult.Errors.Select(e => e.Description).ToList());
+
+                return View();
             }
 
-            ModelState.AddModelErrorList(identityResult.Errors.Select(e => e.Description).ToList());
+            var exchangeExpireClaim = new Claim("ExchangeExpireDate", DateTime.Now.AddDays(10).ToString());
 
-            return View();
+            var currentUser = await _userManager.FindByNameAsync(signUpViewModel.UserName);
+
+            var claimResult = await _userManager.AddClaimAsync(currentUser!, exchangeExpireClaim);
+
+            if (!claimResult.Succeeded)
+            {
+                ModelState.AddModelErrorList(claimResult.Errors.Select(e => e.Description).ToList());
+
+                return View();
+            }
+
+            TempData["SuccessMessage"] = "You SignUp request success.";
+
+            return RedirectToAction("SignUp");
+
         }
 
         public IActionResult SignIn()

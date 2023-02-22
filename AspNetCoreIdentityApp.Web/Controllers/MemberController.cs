@@ -188,6 +188,13 @@ namespace AspNetCoreIdentityApp.Web.Controllers
             return View();
         }
 
+        [Authorize(Policy = "ExchangePolicy")]
+        [HttpGet]
+        public IActionResult ExchangePage()
+        {
+            return View();
+        }
+
         public async Task<IActionResult> AccessDenied(string returnUrl)
         {
             string message = string.Empty;
