@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.Extensions.FileProviders;
+using System.Security.Claims;
 
 namespace AspNetCoreIdentityApp.Web.Controllers
 {
@@ -151,7 +152,17 @@ namespace AspNetCoreIdentityApp.Web.Controllers
             await _userManager.UpdateSecurityStampAsync(currentUser);
 
             await _signInManager.SignOutAsync();
-            await _signInManager.SignInAsync(currentUser, true);
+
+            //kullanıcı güncellendikten sonra çıkıp girmesi için yazılan blok. çünkü claim güncellenmeli. eğer doğum tarihi var ise birthdate claim i ile birlikte giriş yapmasını
+            //yok ise claimsiz giriş yapmasını sağlıyoruz.
+            if (userEditViewModel.BirthDate.HasValue)
+            {
+                await _signInManager.SignInWithClaimsAsync(currentUser, true, new[] { new Claim("BirthDate", currentUser.BirthDate!.Value.ToString()) });
+            }
+            else
+            {
+                await _signInManager.SignInAsync(currentUser, true);
+            }
 
             TempData["SuccessMessage"] = "User details changed successfully";
 
@@ -191,6 +202,13 @@ namespace AspNetCoreIdentityApp.Web.Controllers
         [Authorize(Policy = "ExchangePolicy")]
         [HttpGet]
         public IActionResult ExchangePage()
+        {
+            return View();
+        }
+
+        [Authorize(Policy = "ViolencePolicy")]
+        [HttpGet]
+        public IActionResult ViolencePage()
         {
             return View();
         }

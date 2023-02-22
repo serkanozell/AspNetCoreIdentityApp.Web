@@ -105,11 +105,6 @@ namespace AspNetCoreIdentityApp.Web.Controllers
 
             var signInResult = await _signInManager.PasswordSignInAsync(user, signInViewModel.Password, signInViewModel.RememberMe, true);
 
-            if (signInResult.Succeeded)
-            {
-                return Redirect(returnUrl!);
-            }
-
             if (signInResult.IsLockedOut)
             {
                 ModelState.AddModelErrorList(new List<string>() { "Your account locked for 3 minutes" });
@@ -117,9 +112,17 @@ namespace AspNetCoreIdentityApp.Web.Controllers
                 return View();
             }
 
-            ModelState.AddModelErrorList(new List<string>() { "Email or password incorrect.", $" Failure login attemt count is : {await _userManager.GetAccessFailedCountAsync(user)}" });
+            if (!signInResult.Succeeded)
+            {
+                ModelState.AddModelErrorList(new List<string>() { "Email or password incorrect.", $" Failure login attemt count is : {await _userManager.GetAccessFailedCountAsync(user)}" });
 
-            return View();
+                return View();
+            }
+
+            if (user.BirthDate.HasValue)
+                await _signInManager.SignInWithClaimsAsync(user, signInViewModel.RememberMe, new[] { new Claim("BirthDate", user.BirthDate.Value.ToString()) });
+
+            return Redirect(returnUrl!);
         }
 
         public async Task<IActionResult> ForgotPassword()

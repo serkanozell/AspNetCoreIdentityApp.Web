@@ -1,4 +1,4 @@
-using AspNetCoreIdentityApp.Web.ClaimProviders;
+﻿using AspNetCoreIdentityApp.Web.ClaimProviders;
 using AspNetCoreIdentityApp.Web.Extensions;
 using AspNetCoreIdentityApp.Web.Models;
 using AspNetCoreIdentityApp.Web.OptionsModel;
@@ -40,18 +40,25 @@ builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("Emai
 builder.Services.AddScoped<IEmailService, EmailService>();
 builder.Services.AddScoped<IClaimsTransformation, UserClaimProvider>();
 builder.Services.AddScoped<IAuthorizationHandler, ExchangeExpireRequirementHandler>();
+builder.Services.AddScoped<IAuthorizationHandler, ViolenceRequirementHandler>();
 
 builder.Services.AddAuthorization(options =>
 {
     options.AddPolicy("AnkaraPolicy", policy =>
     {
         policy.RequireClaim("City", "Ankara");
+        //policy.RequireClaim("City", "Ankara","Kirklareli"); //bu şekilde birsürü value ile güncellenebilir
         policy.RequireRole("Admin");
     });
 
     options.AddPolicy("ExchangePolicy", policy =>
     {
         policy.AddRequirements(new ExchangeExpireRequirement());
+    });
+
+    options.AddPolicy("ViolencePolicy", policy =>
+    {
+        policy.AddRequirements(new ViolenceRequirement() { ThresholdAge = 18 });
     });
 
 });
