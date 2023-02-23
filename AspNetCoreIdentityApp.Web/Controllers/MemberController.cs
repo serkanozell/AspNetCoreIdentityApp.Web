@@ -114,7 +114,7 @@ namespace AspNetCoreIdentityApp.Web.Controllers
                 return View();
             }
 
-            var currentUser = await _userManager.FindByNameAsync(User.Identity!.Name!);
+            var currentUser = (await _userManager.FindByNameAsync(User.Identity!.Name!))!;
 
             currentUser.UserName = userEditViewModel.UserName;
             currentUser.Email = userEditViewModel.Email;

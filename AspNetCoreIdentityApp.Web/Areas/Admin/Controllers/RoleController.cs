@@ -14,11 +14,13 @@ namespace AspNetCoreIdentityApp.Web.Areas.Admin.Controllers
     {
         private readonly UserManager<AppUser> _userManager;
         private readonly RoleManager<AppRole> _roleManager;
+        private readonly SignInManager<AppUser> _signInManager;
 
-        public RoleController(UserManager<AppUser> userManager, RoleManager<AppRole> roleManager)
+        public RoleController(UserManager<AppUser> userManager, RoleManager<AppRole> roleManager, SignInManager<AppUser> signInManager)
         {
             _userManager = userManager;
             _roleManager = roleManager;
+            _signInManager = signInManager;
         }
 
         [Authorize(Roles = "Role-Action")]
@@ -158,6 +160,14 @@ namespace AspNetCoreIdentityApp.Web.Areas.Admin.Controllers
                 {
                     await _userManager.RemoveFromRoleAsync(userToAssignRoles, role.RoleName);
                 }
+            }
+
+            var currentUser = (await _userManager.FindByNameAsync(User.Identity!.Name!))!;
+            if (userToAssignRoles.UserName == currentUser.UserName)
+            {
+                await _signInManager.SignOutAsync();
+
+                await _signInManager.SignInAsync(currentUser, true);
             }
 
             return RedirectToAction(nameof(HomeController.UserList), "Home");

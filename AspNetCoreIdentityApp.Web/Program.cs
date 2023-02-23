@@ -2,7 +2,9 @@
 using AspNetCoreIdentityApp.Web.Extensions;
 using AspNetCoreIdentityApp.Web.Models;
 using AspNetCoreIdentityApp.Web.OptionsModel;
+using AspNetCoreIdentityApp.Web.PermissionsRoot;
 using AspNetCoreIdentityApp.Web.Requirements;
+using AspNetCoreIdentityApp.Web.Seeds;
 using AspNetCoreIdentityApp.Web.Services;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
@@ -61,6 +63,28 @@ builder.Services.AddAuthorization(options =>
         policy.AddRequirements(new ViolenceRequirement() { ThresholdAge = 18 });
     });
 
+    options.AddPolicy("OrderPermissionReadAndDelete", policy =>
+    {
+        policy.RequireClaim("Permission", Permission.Order.Read);
+        policy.RequireClaim("Permission", Permission.Order.Delete);
+        policy.RequireClaim("Permission", Permission.Stock.Delete);
+    });
+
+    options.AddPolicy("Permission.Order.Read", policy =>
+    {
+        policy.RequireClaim("Permission", Permission.Order.Read);
+    });
+
+    options.AddPolicy("Permission.Order.Delete", policy =>
+    {
+        policy.RequireClaim("Permission", Permission.Order.Delete);
+    });
+
+    options.AddPolicy("Permission.Stock.Delete", policy =>
+    {
+        policy.RequireClaim("Permission", Permission.Stock.Delete);
+    });
+
 });
 
 builder.Services.Configure<SecurityStampValidatorOptions>(options =>
@@ -71,6 +95,13 @@ builder.Services.Configure<SecurityStampValidatorOptions>(options =>
 builder.Services.AddSingleton<IFileProvider>(new PhysicalFileProvider(Directory.GetCurrentDirectory()));
 
 var app = builder.Build();
+
+using (var scope = app.Services.CreateScope())
+{
+    var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<AppRole>>();
+
+    await PermissionSeed.Seed(roleManager);
+}
 
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
