@@ -1,8 +1,8 @@
 ﻿using AspNetCoreIdentityApp.Core.Models;
 using AspNetCoreIdentityApp.Core.ViewModels;
 using AspNetCoreIdentityApp.Repository.Models;
+using AspNetCoreIdentityApp.Service.Services;
 using AspNetCoreIdentityApp.Web.Extensions;
-using AspNetCoreIdentityApp.Repository.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -18,32 +18,25 @@ namespace AspNetCoreIdentityApp.Web.Controllers
         private readonly SignInManager<AppUser> _signInManager;
         private readonly UserManager<AppUser> _userManager;
         private readonly IFileProvider _fileProvider;
+        private readonly IMemberService _memberService;
+        private string userName => User.Identity!.Name!;
 
-        public MemberController(SignInManager<AppUser> signInManager, UserManager<AppUser> userManager, IFileProvider fileProvider)
+        public MemberController(SignInManager<AppUser> signInManager, UserManager<AppUser> userManager, IFileProvider fileProvider, IMemberService memberService)
         {
             _signInManager = signInManager;
             _userManager = userManager;
             _fileProvider = fileProvider;
+            _memberService = memberService;
         }
 
         public async Task<IActionResult> Index()
         {
-            var currentUser = await _userManager.FindByNameAsync(User.Identity!.Name!);
-
-            var userViewModel = new UserViewModel
-            {
-                Email = currentUser!.Email,
-                UserName = currentUser.UserName,
-                PhoneNumber = currentUser.PhoneNumber,
-                PictureUrl = currentUser.Picture
-            };
-
-            return View(userViewModel);
+            return View(await _memberService.GetUserByUserNameAsync(userName));
         }
 
         public async Task LogOut()
         {
-            await _signInManager.SignOutAsync();
+            await _memberService.LogOutAsync();
         }
 
         public IActionResult PasswordChange()
@@ -59,30 +52,21 @@ namespace AspNetCoreIdentityApp.Web.Controllers
                 return View();
             }
 
-            var currentUser = (await _userManager.FindByNameAsync(User.Identity!.Name!))!;
-
-            var checkOldPassword = await _userManager.CheckPasswordAsync(currentUser, passwordChangeViewModel.PasswordOld);
-
-            if (!checkOldPassword)
+            if (!await _memberService.CheckPasswordAsync(userName, passwordChangeViewModel.PasswordOld))
             {
                 ModelState.AddModelError(string.Empty, "Old Password incorrect");
 
                 return View();
             }
 
-            var resultChangePassword = await _userManager.ChangePasswordAsync(currentUser, passwordChangeViewModel.PasswordOld, passwordChangeViewModel.PasswordNew);
+            var (isSuccess, errors) = await _memberService.ChangePasswordAsync(userName, passwordChangeViewModel.PasswordOld, passwordChangeViewModel.PasswordNew);
 
-            if (!resultChangePassword.Succeeded)
+            if (!isSuccess)
             {
-                ModelState.AddModelErrorList(resultChangePassword.Errors);
+                ModelState.AddModelErrorList(errors!);
 
                 return View();
             }
-
-            await _userManager.UpdateSecurityStampAsync(currentUser); //açık tarayıcı varsa şifre değiştirdiğimiz için stamp güncellemesi yapılmalı o yüzden oralarda çıkış yapmamlı
-
-            await _signInManager.SignOutAsync(); //cookienin güncellenmesi için çıkış yapıp tekrar giriş yapıyoruz
-            await _signInManager.PasswordSignInAsync(currentUser, passwordChangeViewModel.PasswordNew, true, false);
 
             TempData["SuccessMessage"] = "You password changed successfully.";
 
@@ -91,21 +75,9 @@ namespace AspNetCoreIdentityApp.Web.Controllers
 
         public async Task<IActionResult> UserEdit()
         {
-            ViewBag.GenderList = new SelectList(Enum.GetNames(typeof(Gender)));
+            ViewBag.GenderList = _memberService.GetGenderSelectList();
 
-            var currentUser = (await _userManager.FindByNameAsync(User.Identity!.Name!))!;
-
-            var userEditViewModel = new UserEditViewModel
-            {
-                UserName = currentUser.UserName!,
-                Email = currentUser.Email!,
-                PhoneNumber = currentUser.PhoneNumber!,
-                BirthDate = currentUser.BirthDate,
-                City = currentUser.City,
-                Gender = currentUser.Gender,
-            };
-
-            return View(userEditViewModel);
+            return View(await _memberService.GetUserEditViewAsync(userName));
         }
 
         [HttpPost]
@@ -116,82 +88,24 @@ namespace AspNetCoreIdentityApp.Web.Controllers
                 return View();
             }
 
-            var currentUser = (await _userManager.FindByNameAsync(User.Identity!.Name!))!;
+            var (isSuccess, errors) = await _memberService.EditUserAsync(userEditViewModel, userName);
 
-            currentUser.UserName = userEditViewModel.UserName;
-            currentUser.Email = userEditViewModel.Email;
-            currentUser.BirthDate = userEditViewModel.BirthDate;
-            currentUser.City = userEditViewModel.City;
-            currentUser.Gender = userEditViewModel.Gender;
-            currentUser.PhoneNumber = userEditViewModel.PhoneNumber;
-
-
-
-            if (userEditViewModel.Picture != null && userEditViewModel.Picture.Length > 0)
+            if (!isSuccess)
             {
-                var wwwRootFolder = _fileProvider.GetDirectoryContents("wwwroot");
-
-                var randomFileName = $"{Guid.NewGuid()}{Path.GetExtension(userEditViewModel.Picture.FileName)}";
-
-                var newPicturePath = Path.Combine(wwwRootFolder.First(x => x.Name == "userpictures").PhysicalPath!, randomFileName);
-
-                using var stream = new FileStream(newPicturePath, FileMode.Create);
-
-                await userEditViewModel.Picture.CopyToAsync(stream);
-
-                currentUser.Picture = randomFileName;
-            }
-
-            var updateToUserResult = await _userManager.UpdateAsync(currentUser);
-
-            if (!updateToUserResult.Succeeded)
-            {
-                ModelState.AddModelErrorList(updateToUserResult.Errors);
+                ModelState.AddModelErrorList(errors!);
 
                 return View();
             }
 
-            await _userManager.UpdateSecurityStampAsync(currentUser);
-
-            await _signInManager.SignOutAsync();
-
-            //kullanıcı güncellendikten sonra çıkıp girmesi için yazılan blok. çünkü claim güncellenmeli. eğer doğum tarihi var ise birthdate claim i ile birlikte giriş yapmasını
-            //yok ise claimsiz giriş yapmasını sağlıyoruz.
-            if (userEditViewModel.BirthDate.HasValue)
-            {
-                await _signInManager.SignInWithClaimsAsync(currentUser, true, new[] { new Claim("BirthDate", currentUser.BirthDate!.Value.ToString()) });
-            }
-            else
-            {
-                await _signInManager.SignInAsync(currentUser, true);
-            }
-
             TempData["SuccessMessage"] = "User details changed successfully";
 
-            var resultUserEditViewModel = new UserEditViewModel
-            {
-                UserName = currentUser.UserName!,
-                Email = currentUser.Email!,
-                PhoneNumber = currentUser.PhoneNumber!,
-                BirthDate = currentUser.BirthDate,
-                City = currentUser.City,
-                Gender = currentUser.Gender
-            };
-
-            return View(resultUserEditViewModel);
+            return View(await _memberService.GetUserEditViewAsync(userName));
         }
 
         [HttpGet]
         public IActionResult Claims()
         {
-            var userClaim = User.Claims.Select(u => new ClaimViewModel()
-            {
-                Issuer = u.Issuer,
-                Type = u.Type,
-                Value = u.Value
-            }).ToList();
-
-            return View(userClaim);
+            return View(_memberService.GetClaims(User));
         }
 
         [Authorize(Policy = "AnkaraPolicy")]

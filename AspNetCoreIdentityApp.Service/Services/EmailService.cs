@@ -3,7 +3,7 @@ using Microsoft.Extensions.Options;
 using System.Net;
 using System.Net.Mail;
 
-namespace AspNetCoreIdentityApp.Web.Services
+namespace AspNetCoreIdentityApp.Service.Services
 {
     public class EmailService : IEmailService
     {
@@ -17,7 +17,7 @@ namespace AspNetCoreIdentityApp.Web.Services
         public async Task SendResetPasswordEmail(string resetPasswordEmailLink, string toEmail)
         {
             var smtpClient = new SmtpClient();
-            smtpClient.Host=_emailSettings.Host;
+            smtpClient.Host = _emailSettings.Host;
             smtpClient.DeliveryMethod = SmtpDeliveryMethod.Network;
             smtpClient.UseDefaultCredentials = false;
             smtpClient.Port = 587;
