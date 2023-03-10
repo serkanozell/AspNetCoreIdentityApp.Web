@@ -1,10 +1,10 @@
-﻿using AspNetCoreIdentityApp.Web.ClaimProviders;
+﻿using AspNetCoreIdentityApp.Core.OptionsModel;
+using AspNetCoreIdentityApp.Core.PermissionsRoot;
+using AspNetCoreIdentityApp.Repository.Models;
+using AspNetCoreIdentityApp.Repository.Seeds;
+using AspNetCoreIdentityApp.Web.ClaimProviders;
 using AspNetCoreIdentityApp.Web.Extensions;
-using AspNetCoreIdentityApp.Web.Models;
-using AspNetCoreIdentityApp.Web.OptionsModel;
-using AspNetCoreIdentityApp.Web.PermissionsRoot;
 using AspNetCoreIdentityApp.Web.Requirements;
-using AspNetCoreIdentityApp.Web.Seeds;
 using AspNetCoreIdentityApp.Web.Services;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
@@ -19,7 +19,10 @@ builder.Services.AddControllersWithViews();
 
 builder.Services.AddDbContext<AppDbContext>(options =>
 {
-    options.UseSqlServer(builder.Configuration.GetConnectionString("SqlConn"));
+    options.UseSqlServer(builder.Configuration.GetConnectionString("SqlConn"), options =>
+    {
+        options.MigrationsAssembly("AspNetCoreIdentityApp.Repository");
+    });
 });
 
 builder.Services.AddIdentityWithExtension();
